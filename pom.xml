@@ -35,6 +35,7 @@
         <module>common</module>
         <module>sdk</module>
         <module>distribution</module>
+        <module>protobuf</module>
     </modules>
 
     <build>
