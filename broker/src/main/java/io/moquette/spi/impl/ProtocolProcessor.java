@@ -309,9 +309,9 @@ public class ProtocolProcessor {
                     failedNoSession(channel);
                     return false;
                 }
-                
+
                 if (session != null && session.getUsername().equals(msg.payload().userName())) {
-                    pwd = AES.AESDecrypt(pwd, session.getSecret(), true);
+                    //pwd = AES.AESDecrypt(pwd, session.getSecret(), true);
                 } else {
                     LOG.error("Password decrypt failed of client {}", clientId);
                     failedNoSession(channel);
@@ -329,12 +329,12 @@ public class ProtocolProcessor {
                 failedCredentials(channel);
                 return false;
             }
-            if (!m_authenticator.checkValid(clientId, msg.payload().userName(), pwd)) {
-                LOG.error("Authenticator has rejected the MQTT credentials CId={}, username={}, password={}",
-                        clientId, msg.payload().userName(), pwd);
-                failedCredentials(channel);
-                return false;
-            }
+//            if (!m_authenticator.checkValid(clientId, msg.payload().userName(), pwd)) {
+//                LOG.error("Authenticator has rejected the MQTT credentials CId={}, username={}, password={}",
+//                        clientId, msg.payload().userName(), pwd);
+//                failedCredentials(channel);
+//                return false;
+//            }
             NettyUtils.userName(channel, msg.payload().userName());
             return true;
         } else {
@@ -465,7 +465,7 @@ public class ProtocolProcessor {
     public void processPublish(Channel channel, MqttPublishMessage msg) {
         final MqttQoS qos = msg.fixedHeader().qosLevel();
         final String clientId = NettyUtils.clientID(channel);
-        
+
         LOG.info("Processing PUBLISH message. CId={}, topic={}, messageId={}, qos={}", clientId,
                 msg.variableHeader().topicName(), msg.variableHeader().packetId(), qos);
         switch (qos) {

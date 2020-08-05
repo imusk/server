@@ -257,7 +257,7 @@ public class Qos1PublishHandler extends QosPublishHandler {
         ByteBuf payload = msg.payload();
         byte[] payloadContent = readBytesAndRewind(payload);
         MemorySessionStore.Session session = m_sessionStore.getSession(clientID);
-        payloadContent = AES.AESDecrypt(payloadContent, session.getSecret(), true);
+        //payloadContent = AES.AESDecrypt(payloadContent, session.getSecret(), true);
         imHandler(clientID, username, imtopic, payloadContent, (errorCode, ackPayload) -> sendPubAck(clientID, messageID, ackPayload, errorCode), false);
     }
 
