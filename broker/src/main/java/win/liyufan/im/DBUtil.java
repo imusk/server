@@ -77,28 +77,28 @@ public class DBUtil {
                     }
                 } else {
                     migrateLocation = "filesystem:./migrate/mysql";
-                    comboPooledDataSource = new ComboPooledDataSource("mysql");
-                    try {
-                        String url01 = comboPooledDataSource.getJdbcUrl().substring(0,comboPooledDataSource.getJdbcUrl().indexOf("?"));
-                        String datasourceName = url01.substring(url01.lastIndexOf("/")+1);
-                        // 连接已经存在的数据库，如：mysql
-                        String jdbc = comboPooledDataSource.getJdbcUrl().replace(datasourceName, "");
-                        Connection connection = DriverManager.getConnection(jdbc, comboPooledDataSource.getUser(), comboPooledDataSource.getPassword());
-                        Statement statement = connection.createStatement();
-
-                        // 创建数据库
-                        statement.executeUpdate("CREATE DATABASE IF NOT EXISTS `" + datasourceName + "` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;");
-
-                        statement.close();
-                        connection.close();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        System.exit(-1);
-                    }
+//                    comboPooledDataSource = new ComboPooledDataSource("mysql");
+//                    try {
+//                        String url01 = comboPooledDataSource.getJdbcUrl().substring(0,comboPooledDataSource.getJdbcUrl().indexOf("?"));
+//                        String datasourceName = url01.substring(url01.lastIndexOf("/")+1);
+//                        // 连接已经存在的数据库，如：mysql
+//                        String jdbc = comboPooledDataSource.getJdbcUrl().replace(datasourceName, "");
+//                        Connection connection = DriverManager.getConnection(jdbc, comboPooledDataSource.getUser(), comboPooledDataSource.getPassword());
+//                        Statement statement = connection.createStatement();
+//
+//                        // 创建数据库
+//                        statement.executeUpdate("CREATE DATABASE IF NOT EXISTS `" + datasourceName + "` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;");
+//
+//                        statement.close();
+//                        connection.close();
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                        System.exit(-1);
+//                    }
 
                 }
-                Flyway flyway = Flyway.configure().dataSource(comboPooledDataSource).locations(migrateLocation).baselineOnMigrate(true).load();
-                flyway.migrate();
+//                Flyway flyway = Flyway.configure().dataSource(comboPooledDataSource).locations(migrateLocation).baselineOnMigrate(true).load();
+//                flyway.migrate();
             }
         }
 

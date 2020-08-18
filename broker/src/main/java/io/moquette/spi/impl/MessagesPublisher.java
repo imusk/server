@@ -169,8 +169,10 @@ public class MessagesPublisher {
         for (String user : receivers) {
             if (!user.equals(sender)) {
                 WFCMessage.User userInfo = m_messagesStore.getUserInfo(user);
+                // 判断接收对象是不是机器人
                 if (userInfo != null && userInfo.getType() == ProtoConstants.UserType.UserType_Robot) {
                     WFCMessage.Robot robot = m_messagesStore.getRobot(user);
+                    // 如果该机器人配置了消息回调地址，则通过Http的方式转发该消息
                     if (robot != null && !StringUtil.isNullOrEmpty(robot.getCallback())) {
                         if (message == null) {
                             message = m_messagesStore.getMessage(messageHead);
@@ -182,12 +184,14 @@ public class MessagesPublisher {
                 }
             }
             long messageSeq;
+            // 入库保存给每个接收对象发送的消息
             if (pullType != ProtoConstants.PullType.Pull_ChatRoom) {
                 messageSeq = m_messagesStore.insertUserMessages(sender, conversationType, target, line, messageContentType, user, messageHead);
             } else {
                 messageSeq = m_messagesStore.insertChatroomMessages(user, line, messageHead);
             }
 
+            // 获取接收对象的Session信息，包含了客户端信息、最后活跃时间，一个用户可能存在多个Session，例如：同时在手机和Web设备登录
             Collection<Session> sessions = m_sessionsStore.sessionForUser(user);
             String senderName = null;
             String targetName = null;
@@ -218,15 +222,18 @@ public class MessagesPublisher {
 
                 if (pullType == ProtoConstants.PullType.Pull_ChatRoom) {
                     if (exceptClientId != null && exceptClientId.equals(targetSession.getClientID())) {
+                        // 刷新
                         targetSession.refreshLastChatroomActiveTime();
                     }
 
                     if (!m_messagesStore.checkChatroomParticipantIdelTime(targetSession)) {
+                        // 这样应该是顺便清理未活跃用户，具体未深入查看
                         m_messagesStore.handleQuitChatroom(user, targetSession.getClientID(), target);
                         continue;
                     }
                 }
 
+                // 是否静默推送 (勿扰)
                 boolean isSlient;
                 if (pullType == ProtoConstants.PullType.Pull_ChatRoom) {
                     isSlient = true;
@@ -241,12 +248,13 @@ public class MessagesPublisher {
                             conversation = WFCMessage.Conversation.newBuilder().setType(conversationType).setLine(line).setTarget(target).build();
                         }
 
-
+                        // 是否设置消息勿扰
                         if (m_messagesStore.getUserConversationSlient(user, conversation)) {
                             LOG.info("The conversation {}-{}-{} is slient", conversation.getType(), conversation.getTarget(), conversation.getLine());
                             isSlient = true;
                         }
 
+                        // 是否设置全局勿扰
                         if (m_messagesStore.getUserGlobalSlient(user)) {
                             LOG.info("The user {} is global sliented", user);
                             isSlient = true;
@@ -266,8 +274,10 @@ public class MessagesPublisher {
                     }
                 }
 
+                // 是否需要推送的用户
                 boolean needPush = !user.equals(sender);
 
+                // 判断当前接收对象(用户)是否处于活跃状态(在线)
                 boolean targetIsActive = this.connectionDescriptors.isConnected(targetSession.getClientSession().clientID);
                 if (targetIsActive) {
                     WFCMessage.NotifyMessage notifyMessage = WFCMessage.NotifyMessage
@@ -282,7 +292,9 @@ public class MessagesPublisher {
                     MqttPublishMessage publishMsg;
                     publishMsg = notRetainedPublish(IMTopic.NotifyMessageTopic, MqttQoS.AT_MOST_ONCE, payload);
 
+                    // 通过MQTT给指定的接收对象发布 MN 的消息
                     boolean sent = this.messageSender.sendPublish(targetSession.getClientSession(), publishMsg);
+                    // 判断消息是否发送 成功，这边设置 needPush 变量的原因，估计是可能用户刚好下线，系统还认为是在线的，就给ClientSession推送消息，但是用户已经接收不到消息了，所以还需要通过 needPush 变量再推送 客户端的通知消息
                     if (sent) {
                         needPush = false;
                     }
@@ -317,6 +329,7 @@ public class MessagesPublisher {
                         continue;
                     }
 
+                    // 获取用户是否隐藏 通知栏详情
                     boolean isHiddenDetail = m_messagesStore.getUserPushHiddenDetail(user);
 
                     if(!nameLoaded) {
@@ -332,6 +345,7 @@ public class MessagesPublisher {
                             name = fd.getAlias();
                         }
                     }
+                    // 请求移动设备消息推送服务接口
                     this.messageSender.sendPush(sender, conversationType, target, line, messageHead, targetSession.getClientID(), pushContent, pushData, messageContentType, serverTime, name, targetName, targetSession.getUnReceivedMsgs(), curMentionType, isHiddenDetail, targetSession.getLanguage());
                 }
 
@@ -456,10 +470,12 @@ public class MessagesPublisher {
             chatRoomHeaders.compute(member, new BiFunction<UserClientEntry, Long, Long>() {
                 @Override
                 public Long apply(UserClientEntry s, Long aLong) {
-                    if (aLong == null)
+                    if (aLong == null) {
                         return messageSeq;
-                    if (messageSeq > aLong)
+                    }
+                    if (messageSeq > aLong) {
                         return messageSeq;
+                    }
                     return aLong;
                 }
             });
